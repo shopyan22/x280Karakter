@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pembatas 280 Karakter + Emoji Otomatis</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f172a; color: #e5e7eb; margin: 0; padding: 20px; }
+    h1 { font-size: 1.5rem; }
+    textarea { width: 100%; min-height: 150px; padding: 10px; border-radius: 8px; border: 1px solid #444;
+               background: #111827; color: #fff; resize: vertical; outline: none; }
+    textarea:focus { border-color: #22d3ee; }
+    .info { margin-top: 8px; font-size: 0.9rem; color: #94a3b8; }
+    .counter { font-weight: bold; }
+    .controls { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    button { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-main { background: #22d3ee; color: #0f172a; }
+    .btn-alt { background: #1f2937; color: #e5e7eb; border: 1px solid #374151; }
+    .status { margin-top: 10px; font-size: 0.9rem; }
+    .ok { color: #34d399; }
+    .danger { color: #f43f5e; }
+  </style>
+</head>
+<body>
+  <h1>Pembatas 280 Karakter + Emoji Otomatis</h1>
+  <textarea id="input" placeholder="Tulis atau tempel teks di sini..."></textarea>
+  <div class="info">
+    Karakter: <span class="counter" id="charCount">0</span> / 280
+  </div>
+  <div class="controls">
+    <label>
+      <input type="checkbox" id="toggleEmoji" /> Tambahkan emoji acak (awal & akhir baris)
+    </label>
+  </div>
+  <div class="controls">
+    <button class="btn-main" id="copyBtn">Salin Hasil</button>
+    <button class="btn-alt" id="clearBtn">Bersihkan</button>
+  </div>
+  <div class="status" id="statusMsg"></div>
+  <h2>Hasil (maks 280 karakter)</h2>
+  <textarea id="output" readonly></textarea>
+
+  <script>
+    const MAX_CHARS = 280;
+    const input = document.getElementById('input');
+    const output = document.getElementById('output');
+    const charCount = document.getElementById('charCount');
+    const statusMsg = document.getElementById('statusMsg');
+    const toggleEmoji = document.getElementById('toggleEmoji');
+    const copyBtn = document.getElementById('copyBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    const EMOJIS = ['😎','🤩','🥳','😉','😊','🤗','🔥','✨','🌟','💫','⚡','💥','🌈','❄️','☀️','🌙','👍','👏','🙌','💪','🫶','🤝','✅','⭐','🏆','📈','💡','🧠','🛠️','🧩','🎯','🗝️','🚀','⏳','📌','🍀','🌱','🌿','🌸','🌻','🌊','🎉','🎁','💎'];
+
+    function randomEmoji() {
+      return EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+    }
+
+    function process() {
+      let raw = input.value || '';
+      if (raw.length > MAX_CHARS) raw = raw.slice(0, MAX_CHARS);
+
+      let result = raw;
+      if (toggleEmoji.checked) {
+        let lines = raw.split(/\r?\n/);
+        result = lines.map(line => {
+          if (!line.trim()) return "";
+          return randomEmoji() + " " + line.trim() + " " + randomEmoji();
+        }).join("\n");
+      }
+
+      output.value = result;
+      charCount.textContent = raw.length;
+      statusMsg.textContent = raw.length >= MAX_CHARS ? '⚠️ Dipangkas ke 280 karakter.' : 'Siap dipakai ✓';
+      statusMsg.className = raw.length >= MAX_CHARS ? 'status danger' : 'status ok';
+    }
+
+    input.addEventListener('input', process);
+    toggleEmoji.addEventListener('change', process);
+
+    copyBtn.addEventListener('click', () => {
+      const text = output.value;
+      if (!text) {
+        statusMsg.textContent = 'Tidak ada teks untuk disalin.';
+        statusMsg.className = 'status danger';
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          statusMsg.textContent = '✅ Hasil + emoji berhasil disalin!';
+          statusMsg.className = 'status ok';
+        }).catch(() => {
+          fallbackCopy(text);
+        });
+      } else {
+        fallbackCopy(text);
+      }
+    });
+
+    function fallbackCopy(text) {
+      output.select();
+      output.setSelectionRange(0, 99999); // mobile
+      try {
+        document.execCommand("copy");
+        statusMsg.textContent = '✅ Hasil + emoji berhasil disalin!';
+        statusMsg.className = 'status ok';
+      } catch {
+        statusMsg.textContent = '❌ Gagal menyalin.';
+        statusMsg.className = 'status danger';
+      }
+    }
+
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      output.value = '';
+      process();
+    });
+
+    process();
+  </script>
+</body>
+</html>
