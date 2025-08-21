@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pembatas 280 Karakter + Emoji Otomatis</title>
+  <title>Pembatas 280 Karakter + Emoji & Acak Kata</title>
   <style>
     body { font-family: Arial, sans-serif; background: #0f172a; color: #e5e7eb; margin: 0; padding: 20px; }
     h1 { font-size: 1.5rem; }
-    textarea { width: 100%; min-height: 150px; padding: 10px; border-radius: 8px; border: 1px solid #444;
+    textarea { width: 100%; min-height: 120px; padding: 10px; border-radius: 8px; border: 1px solid #444;
                background: #111827; color: #fff; resize: vertical; outline: none; }
     textarea:focus { border-color: #22d3ee; }
     .info { margin-top: 8px; font-size: 0.9rem; color: #94a3b8; }
@@ -19,13 +19,15 @@
     .status { margin-top: 10px; font-size: 0.9rem; }
     .ok { color: #34d399; }
     .danger { color: #f43f5e; }
+    h2 { margin-top: 30px; }
   </style>
 </head>
 <body>
   <h1>Pembatas 280 Karakter + Emoji Otomatis</h1>
-  <textarea id="input" placeholder="Tulis atau tempel teks di sini..."></textarea>
+  <!-- === BAGIAN EMOJI === -->
+  <textarea id="inputEmoji" placeholder="Tulis teks untuk versi emoji..."></textarea>
   <div class="info">
-    Karakter: <span class="counter" id="charCount">0</span> / 280
+    Karakter: <span class="counter" id="charCountEmoji">0</span> / 280
   </div>
   <div class="controls">
     <label>
@@ -33,90 +35,165 @@
     </label>
   </div>
   <div class="controls">
-    <button class="btn-main" id="copyBtn">Salin Hasil</button>
-    <button class="btn-alt" id="clearBtn">Bersihkan</button>
+    <button class="btn-main" id="copyBtnEmoji">Salin Hasil</button>
+    <button class="btn-alt" id="clearBtnEmoji">Bersihkan</button>
   </div>
-  <div class="status" id="statusMsg"></div>
-  <h2>Hasil (maks 280 karakter)</h2>
-  <textarea id="output" readonly></textarea>
+  <div class="status" id="statusMsgEmoji"></div>
+  <h2>Hasil Emoji</h2>
+  <textarea id="outputEmoji" readonly></textarea>
+
+  <!-- === BAGIAN ACAK KATA === -->
+  <h1>Acak Kata (Dipisah Koma)</h1>
+  <textarea id="inputShuffle" placeholder="Tulis teks untuk diacak..."></textarea>
+  <div class="controls">
+    <button class="btn-main" id="copyBtnShuffle">Salin Hasil</button>
+    <button class="btn-alt" id="clearBtnShuffle">Bersihkan</button>
+  </div>
+  <div class="status" id="statusMsgShuffle"></div>
+  <h2>Hasil Acak Kata</h2>
+  <textarea id="outputShuffle" readonly></textarea>
 
   <script>
-    const MAX_CHARS = 280;
-    const input = document.getElementById('input');
-    const output = document.getElementById('output');
-    const charCount = document.getElementById('charCount');
-    const statusMsg = document.getElementById('statusMsg');
-    const toggleEmoji = document.getElementById('toggleEmoji');
-    const copyBtn = document.getElementById('copyBtn');
-    const clearBtn = document.getElementById('clearBtn');
+  const MAX_CHARS = 280;
 
-    const EMOJIS = ['😎','🤩','🥳','😉','😊','🤗','🔥','✨','🌟','💫','⚡','💥','🌈','❄️','☀️','🌙','👍','👏','🙌','💪','🫶','🤝','✅','⭐','🏆','📈','💡','🧠','🛠️','🧩','🎯','🗝️','🚀','⏳','📌','🍀','🌱','🌿','🌸','🌻','🌊','🎉','🎁','💎'];
+  // === DATA EMOJI ===
+  const EMOJIS = ['😎','🤩','🥳','😉','😊','🤗','🔥','✨','🌟','💫','⚡','💥','🌈','❄️','☀️','🌙','👍','👏','🙌','💪','🫶','🤝','✅','⭐','🏆','📈','💡','🧠','🛠️','🧩','🎯','🗝️','🚀','⏳','📌','🍀','🌱','🌿','🌸','🌻','🌊','🎉','🎁','💎'];
 
-    function randomEmoji() {
-      return EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+  function randomEmoji() {
+    return EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+  }
+
+  // === FUNGSI SHUFFLE ARRAY ===
+  function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // === UTIL: COPY DARI TEXTAREA (Clipboard API + Fallback) ===
+  function copyFromTextarea(textareaEl, statusEl, successMsg) {
+    const text = textareaEl.value || '';
+    if (!text) {
+      statusEl.textContent = 'Tidak ada teks untuk disalin.';
+      statusEl.className = 'status danger';
+      return;
     }
 
-    function process() {
-      let raw = input.value || '';
-      if (raw.length > MAX_CHARS) raw = raw.slice(0, MAX_CHARS);
-
-      let result = raw;
-      if (toggleEmoji.checked) {
-        let lines = raw.split(/\r?\n/);
-        result = lines.map(line => {
-          if (!line.trim()) return "";
-          return randomEmoji() + " " + line.trim() + " " + randomEmoji();
-        }).join("\n");
-      }
-
-      output.value = result;
-      charCount.textContent = raw.length;
-      statusMsg.textContent = raw.length >= MAX_CHARS ? '⚠️ Dipangkas ke 280 karakter.' : 'Siap dipakai ✓';
-      statusMsg.className = raw.length >= MAX_CHARS ? 'status danger' : 'status ok';
+    // Pakai Clipboard API jika secure context
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        statusEl.textContent = successMsg;
+        statusEl.className = 'status ok';
+      }).catch(() => {
+        fallback();
+      });
+    } else {
+      fallback();
     }
 
-    input.addEventListener('input', process);
-    toggleEmoji.addEventListener('change', process);
+    function fallback() {
+      // Buat textarea sementara agar readonly tidak jadi masalah
+      const temp = document.createElement('textarea');
+      temp.value = text;
+      temp.setAttribute('readonly', '');
+      temp.style.position = 'fixed';
+      temp.style.top = '-1000px';
+      document.body.appendChild(temp);
+      temp.focus();
+      temp.select();
 
-    copyBtn.addEventListener('click', () => {
-      const text = output.value;
-      if (!text) {
-        statusMsg.textContent = 'Tidak ada teks untuk disalin.';
-        statusMsg.className = 'status danger';
-        return;
-      }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-          statusMsg.textContent = '✅ Hasil + emoji berhasil disalin!';
-          statusMsg.className = 'status ok';
-        }).catch(() => {
-          fallbackCopy(text);
-        });
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(temp);
+
+      if (ok) {
+        statusEl.textContent = successMsg;
+        statusEl.className = 'status ok';
       } else {
-        fallbackCopy(text);
-      }
-    });
-
-    function fallbackCopy(text) {
-      output.select();
-      output.setSelectionRange(0, 99999); // mobile
-      try {
-        document.execCommand("copy");
-        statusMsg.textContent = '✅ Hasil + emoji berhasil disalin!';
-        statusMsg.className = 'status ok';
-      } catch {
-        statusMsg.textContent = '❌ Gagal menyalin.';
-        statusMsg.className = 'status danger';
+        statusEl.textContent = '❌ Gagal menyalin.';
+        statusEl.className = 'status danger';
       }
     }
+  }
 
-    clearBtn.addEventListener('click', () => {
-      input.value = '';
-      output.value = '';
-      process();
-    });
+  // ==========================
+  // ====== BAGIAN EMOJI ======
+  // ==========================
+  const inputEmoji = document.getElementById('inputEmoji');
+  const outputEmoji = document.getElementById('outputEmoji');
+  const charCountEmoji = document.getElementById('charCountEmoji');
+  const statusMsgEmoji = document.getElementById('statusMsgEmoji');
+  const toggleEmoji = document.getElementById('toggleEmoji');
+  const copyBtnEmoji = document.getElementById('copyBtnEmoji');
+  const clearBtnEmoji = document.getElementById('clearBtnEmoji');
 
-    process();
-  </script>
+  function processEmoji() {
+    let raw = inputEmoji.value || '';
+    if (raw.length > MAX_CHARS) raw = raw.slice(0, MAX_CHARS);
+
+    let result = raw;
+    if (toggleEmoji.checked) {
+      const lines = raw.split(/\r?\n/);
+      result = lines.map(line => {
+        if (!line.trim()) return '';
+        return `${randomEmoji()} ${line.trim()} ${randomEmoji()}`;
+      }).join('\n');
+    }
+
+    outputEmoji.value = result;
+    charCountEmoji.textContent = raw.length;
+    statusMsgEmoji.textContent = raw.length >= MAX_CHARS ? '⚠️ Dipangkas ke 280 karakter.' : 'Siap dipakai ✓';
+    statusMsgEmoji.className = raw.length >= MAX_CHARS ? 'status danger' : 'status ok';
+  }
+
+  inputEmoji.addEventListener('input', processEmoji);
+  toggleEmoji.addEventListener('change', processEmoji);
+
+  copyBtnEmoji.addEventListener('click', () => {
+    copyFromTextarea(outputEmoji, statusMsgEmoji, '✅ Hasil berhasil disalin!');
+  });
+
+  clearBtnEmoji.addEventListener('click', () => {
+    inputEmoji.value = '';
+    outputEmoji.value = '';
+    processEmoji();
+  });
+
+  processEmoji();
+
+  // ==========================
+  // ====== ACAK KATA =========
+  // ==========================
+  const inputShuffle = document.getElementById('inputShuffle');
+  const outputShuffle = document.getElementById('outputShuffle');
+  const statusMsgShuffle = document.getElementById('statusMsgShuffle');
+  const copyBtnShuffle = document.getElementById('copyBtnShuffle');
+  const clearBtnShuffle = document.getElementById('clearBtnShuffle');
+
+  function processShuffle() {
+    const raw = inputShuffle.value || '';
+    const words = raw.split(/\s+/).filter(Boolean);
+    const shuffled = shuffleArray(words);
+    // Pisah KOMA SATU: "A, B, C" (tanpa koma terakhir)
+    outputShuffle.value = shuffled.join(' ');
+    statusMsgShuffle.textContent = words.length > 0 ? '✅ Kata berhasil diacak!' : 'Masukkan teks terlebih dahulu.';
+    statusMsgShuffle.className = words.length > 0 ? 'status ok' : 'status danger';
+  }
+
+  inputShuffle.addEventListener('input', processShuffle);
+
+  copyBtnShuffle.addEventListener('click', () => {
+    copyFromTextarea(outputShuffle, statusMsgShuffle, '✅ Hasil acak kata berhasil disalin!');
+  });
+
+  clearBtnShuffle.addEventListener('click', () => {
+    inputShuffle.value = '';
+    outputShuffle.value = '';
+    statusMsgShuffle.textContent = '';
+  });
+</script>
+
 </body>
 </html>
