@@ -81,7 +81,6 @@
       return;
     }
 
-    // Pakai Clipboard API jika secure context
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(text).then(() => {
         statusEl.textContent = successMsg;
@@ -94,7 +93,6 @@
     }
 
     function fallback() {
-      // Buat textarea sementara agar readonly tidak jadi masalah
       const temp = document.createElement('textarea');
       temp.value = text;
       temp.setAttribute('readonly', '');
@@ -174,12 +172,18 @@
 
   function processShuffle() {
     const raw = inputShuffle.value || '';
-    const words = raw.split(/\s+/).filter(Boolean);
-    const shuffled = shuffleArray(words);
-    // Pisah KOMA SATU: "A, B, C" (tanpa koma terakhir)
-    outputShuffle.value = shuffled.join(' ');
-    statusMsgShuffle.textContent = words.length > 0 ? '✅ Kata berhasil diacak!' : 'Masukkan teks terlebih dahulu.';
-    statusMsgShuffle.className = words.length > 0 ? 'status ok' : 'status danger';
+    // Pisahkan berdasarkan koma, bukan spasi
+    const items = raw.split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+
+    const shuffled = shuffleArray(items);
+    outputShuffle.value = shuffled.join(', ');
+
+    statusMsgShuffle.textContent = items.length > 0 
+      ? '✅ Kata berhasil diacak!' 
+      : 'Masukkan teks terlebih dahulu.';
+    statusMsgShuffle.className = items.length > 0 ? 'status ok' : 'status danger';
   }
 
   inputShuffle.addEventListener('input', processShuffle);
